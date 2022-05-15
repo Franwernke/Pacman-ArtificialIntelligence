@@ -86,21 +86,81 @@ def depthFirstSearch(problem):
     print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
-    "*** ADD YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    visited = []
+    solution = []
+    solution = recursiveDfs((problem.getStartState(), ''), visited, problem)
+    solution.reverse()
+    return solution[1:]
+    
+
+def recursiveDfs(curState, visited, problem):
+    if curState[0] in visited:
+        return []
+    visited.append(curState[0])
+    if problem.isGoalState(curState[0]):
+        return [curState[1]]
+    for state in problem.getSuccessors(curState[0]):
+        solution = recursiveDfs(state, visited, problem)
+        if len(solution) > 0:
+            solution.append(curState[1])
+            return solution
+    return []
 
 
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
-    "*** ADD YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    visited = []
+    fifo = [(problem.getStartState(), '')]
+    fathers = {str(problem.getStartState()): 'NONE'}
+    while len(fifo) > 0:
+        curState = fifo[0]
+        fifo = fifo[1:]
+        visited.append(curState[0])
+        for state in problem.getSuccessors(curState[0]):
+            if state[0] in visited:
+                continue
+            fathers[str(state[0])] = curState
+            if problem.isGoalState(state[0]):
+                solution = recoverSolution(fathers, state)
+                solution.reverse()
+                return solution[1:]
+            fifo.append(state)
 
+def recoverSolution(fathers, state):
+    father = fathers[str(state[0])]
+    solution = [state[1]]
+    while father != 'NONE':
+        solution.append(father[1])
+        father = fathers[str(father[0])]
+    return solution
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
     "*** ADD YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    visited = []
+    border = util.PriorityQueue()
+    border.push((problem.getStartState(), '', 0), 0)
+    fathers = {str(problem.getStartState()): 'NONE'}
+    costs = {str(problem.getStartState()): 0}
+    while not border.isEmpty():
+        curState = border.pop()
+        visited.append(curState[0])
+        for state in problem.getSuccessors(curState[0]):
+            if state[0] in visited:
+                continue
+            fathers[str(state[0])] = curState
+            if problem.isGoalState(state[0]):
+                solution = recoverSolution(fathers, state)
+                solution.reverse()
+                return solution[1:]
+            cost = calculateCost(state, costs, fathers)
+            border.push(state, cost)
+    return []
 
+def calculateCost(state, costs, fathers):
+    father = fathers[str(state[0])]
+    costs[str(state[0])] = costs[str(father[0])] + father[2]
+    return costs[str(state[0])]
 
 def nullHeuristic(state, problem=None):
     """
