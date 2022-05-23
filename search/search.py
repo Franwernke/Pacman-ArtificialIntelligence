@@ -147,30 +147,35 @@ def recoverSolution(fathers, state):
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
     "*** ADD YOUR CODE HERE ***"
-    visited = []
+    if problem.isGoalState(problem.getStartState()):
+        return []
+
     border = util.PriorityQueue()
-    border.push((problem.getStartState(), '', 0), 0)
-    fathers = {str(problem.getStartState()): 'NONE'}
-    costs = {str(problem.getStartState()): 0}
+    fathers = {}
+    costs = {}
+    costs[str(problem.getStartState())] = 0
+
+    for state in problem.getSuccessors(problem.getStartState()):
+        fathers[str(state[0])] = (None, state[1])
+        costs[str(state[0])] = state[2]
+        border.push(state, state[2])
+
     while not border.isEmpty():
         curState = border.pop()
-        visited.append(curState[0])
+        if problem.isGoalState(curState[0]):
+            solution = recoverSolution(fathers, curState)
+            solution.reverse()
+            return solution
         for state in problem.getSuccessors(curState[0]):
-            if state[0] in visited:
+            cost = calculateCost(state, costs, curState[0])
+            if str(state[0]) in costs and cost >= costs[str(state[0])]:
                 continue
-            fathers[str(state[0])] = curState
-            if problem.isGoalState(state[0]):
-                solution = recoverSolution(fathers, state)
-                solution.reverse()
-                return solution[1:]
-            cost = calculateCost(state, costs, fathers)
+            costs[str(state[0])] = cost
+            fathers[str(state[0])] = (curState[0], state[1])
             border.push(state, cost)
-    return []
 
-def calculateCost(state, costs, fathers):
-    father = fathers[str(state[0])]
-    costs[str(state[0])] = costs[str(father[0])] + father[2]
-    return costs[str(state[0])]
+def calculateCost(state, costs, father):
+    return costs[str(father)] + state[2]
 
 def nullHeuristic(state, problem=None):
     """
@@ -179,40 +184,40 @@ def nullHeuristic(state, problem=None):
     """
     return 0
 
-def manhattanHeuristic(position, problem):
-    "The Manhattan distance heuristic for a PositionSearchProblem"
-    xy1 = position
-    xy2 = problem.goal
-    return abs(xy1[0] - xy2[0]) + abs(xy1[1] - xy2[1])
-
 
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** ADD YOUR CODE HERE ***"
-    visited = []
+    if problem.isGoalState(problem.getStartState()):
+        return []
+
     border = util.PriorityQueue()
-    border.push((problem.getStartState(), '', 0), 0)
-    fathers = {str(problem.getStartState()): 'NONE'}
-    costs = {str(problem.getStartState()): 0}
+    fathers = {}
+    costs = {}
+    costs[str(problem.getStartState())] = 0
+
+    for state in problem.getSuccessors(problem.getStartState()):
+        fathers[str(state[0])] = (None, state[1])
+        costs[str(state[0])] = state[2]
+        border.push(state, state[2] + heuristic(state[0], problem))
+
     while not border.isEmpty():
         curState = border.pop()
-        visited.append(curState[0])
+        if problem.isGoalState(curState[0]):
+            solution = recoverSolution(fathers, curState)
+            solution.reverse()
+            return solution
         for state in problem.getSuccessors(curState[0]):
-            if state[0] in visited:
+            [totalCost, g] = calculateCostWithHeuristic(state, costs, curState[0], problem, heuristic)
+            if str(state[0]) in costs and totalCost >= costs[str(state[0])]:
                 continue
-            fathers[str(state[0])] = curState
-            if problem.isGoalState(state[0]):
-                solution = recoverSolution(fathers, state)
-                solution.reverse()
-                return solution[1:]
-            cost = calculateCostWithHeuristic(state, costs, fathers, problem)
-            border.push(state, cost)
+            costs[str(state[0])] = g
+            fathers[str(state[0])] = (curState[0], state[1])
+            border.push(state, totalCost)
     return []
 
-def calculateCostWithHeuristic(state, costs, fathers, problem, heuristic=manhattanHeuristic):
-    father = fathers[str(state[0])]
-    costs[str(state[0])] = costs[str(father[0])] + father[2]
-    return costs[str(state[0])] + heuristic(state[0], problem)
+def calculateCostWithHeuristic(state, costs, father, problem, heuristic):
+    return [costs[str(father)] + state[2] + heuristic(state[0], problem), costs[str(father)] + state[2]]
 
 def learningRealTimeAStar(problem, heuristic=nullHeuristic):
     """Execute a number of trials of LRTA* and return the best plan found."""
