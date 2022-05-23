@@ -109,29 +109,39 @@ def recursiveDfs(curState, visited, problem):
 
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
-    visited = []
-    fifo = [(problem.getStartState(), '')]
-    fathers = {str(problem.getStartState()): 'NONE'}
+    if problem.isGoalState(problem.getStartState()):
+        return []
+    
+    expanded = [problem.getStartState()]
+
+    fifo = []
+    fathers = {}
+    for state in problem.getSuccessors(problem.getStartState()):
+        fifo.append(state)
+        fathers[str(state[0])] = (None, state[1])
+        expanded.append(state[0])
+
     while len(fifo) > 0:
         curState = fifo[0]
+        if problem.isGoalState(curState[0]):
+            solution = recoverSolution(fathers, curState)
+            solution.reverse()
+            return solution
         fifo = fifo[1:]
-        visited.append(curState[0])
         for state in problem.getSuccessors(curState[0]):
-            if state[0] in visited:
+            if state[0] in expanded:
                 continue
-            fathers[str(state[0])] = curState
-            if problem.isGoalState(state[0]):
-                solution = recoverSolution(fathers, state)
-                solution.reverse()
-                return solution[1:]
+            if not (str(state[0]) in fathers):
+                fathers[str(state[0])] = (curState[0], state[1])
             fifo.append(state)
+            expanded.append(state[0])
 
 def recoverSolution(fathers, state):
     father = fathers[str(state[0])]
-    solution = [state[1]]
-    while father != 'NONE':
-        solution.append(father[1])
+    solution = [father[1]]
+    while father[0] != None:
         father = fathers[str(father[0])]
+        solution.append(father[1])
     return solution
 
 def uniformCostSearch(problem):
