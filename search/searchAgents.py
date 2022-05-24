@@ -283,23 +283,19 @@ class CornersProblem(search.SearchProblem):
         self._expanded = 0 # DO NOT CHANGE; Number of search nodes expanded
         # Please add any code here which you would like to use
         # in initializing the problem
-        "*** ADD YOUR CODE HERE ***"
-        self.cornersVisited = []
 
     def getStartState(self):
         """
         Returns the start state (in your state space, not the full Pacman state
         space)
         """
-        return self.startingPosition
+        return (self.startingPosition, [x for x in self.corners])
 
     def isGoalState(self, state):
         """
         Returns whether this search state is a goal state of the problem.
         """
-        if state in self.corners:
-            self.cornersVisited.append(state)
-        return len(self.cornersVisited) >= 4
+        return len(state[1]) <= 0
 
 
     def getSuccessors(self, state):
@@ -317,12 +313,17 @@ class CornersProblem(search.SearchProblem):
         for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
             # Add a successor state to the successor list if the action is legal
             # Here's a code snippet for figuring out whether a new position hits a wall:
-            x,y = state
+            x,y = state[0]
             dx, dy = Actions.directionToVector(action)
             nextx, nexty = int(x + dx), int(y + dy)
             hitsWall = self.walls[nextx][nexty]
+            isFood = (nextx, nexty) in state[1]
             if not hitsWall:
-                successors.append(((nextx, nexty), action, 1))
+                if isFood:
+                    notVisitedCorners = filter(lambda x: x != (nextx, nexty), state[1])
+                else:
+                    notVisitedCorners = state[1]
+                successors.append((((nextx, nexty), notVisitedCorners), action, 1))
 
         self._expanded += 1 # DO NOT CHANGE
         return successors
@@ -340,6 +341,10 @@ class CornersProblem(search.SearchProblem):
             if self.walls[x][y]: return 999999
         return len(actions)
 
+def simpleManhattanHeuristic(state, goal):
+    xy1 = state
+    xy2 = goal
+    return abs(xy1[0] - xy2[0]) + abs(xy1[1] - xy2[1])
 
 def cornersHeuristic(state, problem):
     """
@@ -358,7 +363,11 @@ def cornersHeuristic(state, problem):
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
     "*** ADD YOUR CODE HERE ***"
-    return 0 # Default to trivial solution
+    distances = []
+    for goal in state[1]:
+        distances.append(simpleManhattanHeuristic(state[0], goal))
+    minValue = min(distances) if len(distances) > 0 else 0
+    return minValue # Default to trivial solution
 
 
 class AStarCornersAgent(SearchAgent):

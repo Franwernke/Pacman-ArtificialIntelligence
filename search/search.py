@@ -155,10 +155,10 @@ def uniformCostSearch(problem):
     costs = {}
     costs[str(problem.getStartState())] = 0
 
-    for state in problem.getSuccessors(problem.getStartState()):
-        fathers[str(state[0])] = (None, state[1])
-        costs[str(state[0])] = state[2]
-        border.push(state, state[2])
+    for edge in problem.getSuccessors(problem.getStartState()):
+        fathers[str(edge[0])] = (None, edge[1])
+        costs[str(edge[0])] = edge[2]
+        border.push(edge, edge[2])
 
     while not border.isEmpty():
         curState = border.pop()
@@ -166,13 +166,13 @@ def uniformCostSearch(problem):
             solution = recoverSolution(fathers, curState)
             solution.reverse()
             return solution
-        for state in problem.getSuccessors(curState[0]):
-            cost = calculateCost(state, costs, curState[0])
-            if str(state[0]) in costs and cost >= costs[str(state[0])]:
+        for edge in problem.getSuccessors(curState[0]):
+            cost = calculateCost(edge, costs, curState[0])
+            if str(edge[0]) in costs and cost >= costs[str(edge[0])]:
                 continue
-            costs[str(state[0])] = cost
-            fathers[str(state[0])] = (curState[0], state[1])
-            border.push(state, cost)
+            costs[str(edge[0])] = cost
+            fathers[str(edge[0])] = (curState[0], edge[1])
+            border.push(edge, cost)
 
 def calculateCost(state, costs, father):
     return costs[str(father)] + state[2]
