@@ -363,11 +363,22 @@ def cornersHeuristic(state, problem):
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
     "*** ADD YOUR CODE HERE ***"
-    distances = []
-    for goal in state[1]:
-        distances.append(simpleManhattanHeuristic(state[0], goal))
-    minValue = min(distances) if len(distances) > 0 else 0
-    return minValue # Default to trivial solution
+    leftCorners = state[1]
+    pacPosition = state[0]
+    totalDistance = 0
+    while len(leftCorners) > 0:
+        nextGoal = (0, 0)
+        distance = 1e9
+        for goal in leftCorners:
+            curDist = simpleManhattanHeuristic(pacPosition, goal)
+            if curDist < distance:
+                distance = curDist
+                nextGoal = goal
+        pacPosition = nextGoal
+        totalDistance += distance
+        leftCorners = filter(lambda x: x != nextGoal, leftCorners)
+
+    return totalDistance
 
 
 class AStarCornersAgent(SearchAgent):
