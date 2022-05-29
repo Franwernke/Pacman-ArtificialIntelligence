@@ -153,6 +153,7 @@ def uniformCostSearch(problem):
     border = util.PriorityQueue()
     fathers = {}
     costs = {}
+    visited = [problem.getStartState()]
     costs[str(problem.getStartState())] = 0
 
     for edge in problem.getSuccessors(problem.getStartState()):
@@ -162,13 +163,15 @@ def uniformCostSearch(problem):
 
     while not border.isEmpty():
         curState = border.pop()
+        visited.append(curState)
+
         if problem.isGoalState(curState[0]):
             solution = recoverSolution(fathers, curState)
             solution.reverse()
             return solution
         for edge in problem.getSuccessors(curState[0]):
             cost = calculateCost(edge, costs, curState[0])
-            if str(edge[0]) in costs and cost >= costs[str(edge[0])]:
+            if str(edge[0]) in costs and cost >= costs[str(edge[0])] or edge in visited:
                 continue
             costs[str(edge[0])] = cost
             fathers[str(edge[0])] = (curState[0], edge[1])
@@ -219,13 +222,52 @@ def aStarSearch(problem, heuristic=nullHeuristic):
 def calculateCostWithHeuristic(state, costs, father, problem, heuristic):
     return [costs[str(father)] + state[2] + heuristic(state[0], problem), costs[str(father)] + state[2]]
 
+
+def heuristicDecorator(currentHeuristic, deviation, nextState):
+    def heuristic(state, problem):
+        if (state == nextState):
+            return currentHeuristic(state, problem)  + deviation
+        return currentHeuristic(state, problem)
+    return heuristic
+
+def trial(problem, curState, heuristic, cost, visited):
+    if problem.isGoalState(curState):
+        return heuristic
+
+    costs = []
+    states = []
+
+    for state in problem.getSuccessors(curState[0]):
+        if state[0] in visited:
+            continue
+        
+        totalCost = heuristic(state[0], problem) + cost + state[2]
+        costs.append(totalCost)
+        states.append(state)
+        visited.append(state[0])
+
+    if len(costs) == 0:
+        return heuristic
+
+    minimalCost = 1e9
+    nextState = None
+    for i in range(len(costs)):
+        if costs[i] < minimalCost:
+            minimalCost = costs[i]
+            nextState = states[i]
+
+    diff = minimalCost - heuristic(nextState[0], problem)
+    if diff > 0:
+        heuristic = heuristicDecorator(heuristic, diff, nextState[0])
+    return trial(problem, nextState, heuristic, nextState[2] + cost, visited)
+
 def learningRealTimeAStar(problem, heuristic=nullHeuristic):
     """Execute a number of trials of LRTA* and return the best plan found."""
-    "*** ADD YOUR CODE HERE ***"
-    util.raiseNotDefined()
-
-    # MAXTRIALS = ...
-    
+    MAXTRIALS = 20
+    for i in range(MAXTRIALS):
+        heuristic = trial(problem, (problem.getStartState(), ''), heuristic, 0, [problem.getStartState()])
+    print(heuristic(problem.getStartState(), problem))
+    return astar(problem, heuristic)
 
 # Abbreviations 
 # *** DO NOT CHANGE THESE ***
